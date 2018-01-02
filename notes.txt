@@ -1,0 +1,41 @@
+OK so here's the high-level plan:
+
+
+	1. get familiar with tldr (shouldn't take long)
+	2. pick something to work on
+	3. write something beautiful
+	4. add it to the repository
+
+
+
+in more detail:
+
+
+Get familiar with TLDR
+	-get Joe to add you to the repo
+	-clone the repo
+	-from the repo folder- use `pip install .` to install it in your current conda environment
+	-check out the example code
+
+
+Pick something to work on
+	-take a look at the issue tracker and milestones on the github page
+	-it's not exclusive- if there's something you'd find useful that isn't
+		there, we can add it
+	-pick an issue and assign it to yourself (and/or whoever you're working on it with)
+	-from a console, type "git checkout -b my_branch_name" to make a new branch- a copy you can work on without messing up any others
+
+
+Write something beautiful
+	-follow whatever workflow or development environment you like. i'm a big fan of messing around with a Jupyter notebook and then moving it to a text file
+	-if you can add your code to a new file, it'll make merging easier later
+	-when you're done- write a **unit test**. there may be cases where a unit test doesn't really make sense, but in general we should aim to use them.
+	-as you go, you can use pip to install your special version of tldr
+	-because you're a professional, nobody has to tell you to write comments and docstrings. we're not going to worry about specific docstring conventions or styles today- just make sure someone who looks at your function should be able to tell what it does and how to use it!
+
+Add it to the repository.
+	-you've suffered for your art. now it's our turn.
+	-make sure you've committed your updated branch (should be doing that all along) with "git commit" and pushed it to the github page ("git push origin my_branch_name")
+	-from the web interface, do a **pull request** to merge it into develop. then find somebody who doesn't look too busy and assign them to review your code.
+	-what'll that person do? pull your branch and install it on their machine, test it out, kick the tires, and look at your code to make sure it makes sense. assuming it all checks out, they'll merge the PR into develop.
+
