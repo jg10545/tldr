@@ -1,9 +1,9 @@
 """
 
-			generic.py
+			bagofwords.py
 
 
-In this file- some generic tools for preprocessing text
+In this file- some generic tools for preprocessing text bag-of-words style.
 
 """
 
@@ -15,22 +15,26 @@ def generic_tokenizer(x):
 	Nothing fancy here.
 	"""
 	x = x.lower().strip()
-   	for c in string.digits+string.punctuation:
+	for c in string.digits+string.punctuation:
 		x = x.replace(c, " ")
 	return x.split()
     
-class Prepper(object):
+
+
+class Bagginator(object):
 	"""
-	Boring prototype class for managinc conversion between raw strings, tokens, and indices
+	Boring prototype class for managing conversion between raw strings, 
+	tokens, and indices.
 	"""
     
-	def __init__(self, corpus, tokenizer=generic_tokenizer):
+	def __init__(self, corpus, tokenizer=generic_tokenizer, minlen=2):
 		"""
 		:corpus: list or iterator of strings, each containing a document
 		:tokenizer: function that maps a string to a list of tokens
+		:minlen: minimum length for tokens
 		"""
 		self.tokenize = tokenizer
-		self.token_list = self._make_tokenlist(corpus)
+		self.token_list = self._make_tokenlist(corpus, minlen=minlen)
 		self.token_index = self._make_index(self.token_list)
 		self._numtokens = len(self.token_index)
 
@@ -54,17 +58,20 @@ class Prepper(object):
 	def __len__(self):
 		return self._numtokens
 
-	def __call__(self, tokens):
+	def __call__(self, s):
 		"""
-		Input a list of tokens, return a list of indices
+		Input a string, return a list of indices
 		"""
-		return [self.token_index[t] for t in tokens if t in self.token_index]
+		tokens = self.tokenize(s)
+		return [self.token_index[t] for t in tokens 
+				if t in self.token_index]
     
 	def __getitem__(self, indices):
 		"""
 		Input a list of indices, return the associated tokens
 		"""
-		return [self.token_list[i] for i in indices if i < self._numtokens]
+		return [self.token_list[i] for i in indices 
+				if i < self._numtokens]
 
 
 

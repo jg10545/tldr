@@ -1,1 +1,1 @@
-from tldr.prepare.generic import Prepper
+from tldr.prepare.bagofwords import Bagginator
