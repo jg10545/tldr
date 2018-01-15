@@ -21,7 +21,7 @@ def character_tokenizer(x):
 
 
 
-class FixedCharacterSequencer(tldr.prepare.Bagginator):
+class FixedLengthCharacterSequencer(Bagginator):
 	"""
 	Text preparer class for when we want a fixed-length sequence
 	of characters (like for the LeCunn CNN model).
@@ -37,7 +37,8 @@ class FixedCharacterSequencer(tldr.prepare.Bagginator):
 	"""
     
 	def __init__(self, corpus, length, padchar=" ", 
-			tokenizer=character_tokenizer):
+			tokenizer=character_tokenizer,
+			token_list=None):
 		"""
 		:corpus: list or iterator of strings, each containing 
 			a document
@@ -45,12 +46,16 @@ class FixedCharacterSequencer(tldr.prepare.Bagginator):
 		:padchar: string, character used to left-pad short
 			documents. assumes that it exists in the corpus.
 		:tokenizer: tokenizing function to use.
+		:token_list: optional, manually specify character->index map
 		"""
 		self.tokenize = tokenizer
-		self.token_list = self._make_tokenlist(corpus, minlen=1)
+		if token_list is None:
+			self.token_list = self._make_tokenlist(corpus, minlen=1)
+		else:
+			self.token_list = token_list
 		self.token_index = self._make_index(self.token_list)
 		self._numtokens = len(self.token_index)
-		elf._pad_index = self.token_index[padchar]
+		self._pad_index = self.token_index[padchar]
 		self._length = length
         
 	def __call__(self, s):
