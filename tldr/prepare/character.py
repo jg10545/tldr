@@ -64,7 +64,8 @@ class FixedLengthCharacterSequencer(Bagginator):
 		"""
 		outarr = np.array([self._pad_index]*self._length, dtype=int)
 		tokens = self.tokenize(s)
-		tokens = [self.token_index[t] for t in tokens
-				if t in self.token_index][:self._length]
+		tokens = [self.token_index[x] for x in 
+				[t for t in tokens if t in 
+				self.token_index][:self._length]]
 		outarr[-len(tokens):] = np.array(tokens)
 		return outarr
