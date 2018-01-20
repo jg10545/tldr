@@ -1,1 +1,2 @@
 from tldr.encode.densebow import encode_dense_bag_of_words
+from tldr.encode.sequence import encode_fixed_length_sequence
