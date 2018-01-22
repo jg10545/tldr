@@ -50,7 +50,9 @@ def model_fn(features, labels, mode, params):
 		our data (e.g. the number of dimensions to 
 		use for one-hot encoding the inputs)
 	:num_classes: number of distinct classes
-	:learning_rate: learning rate for MomentumOptimizer
+	:learning_rate: initial learning rate for MomentumOptimizer
+	:decay_steps:
+	:decay_rate:
 	:momentum: momentum for MomentumOptimizer
 	:dropout_prob: dropout probability for dense layers
 	"""
@@ -100,9 +102,13 @@ def model_fn(features, labels, mode, params):
 		"auc":tf.metrics.auc(labels, predictions)
 		}
 
-	optimizer = tf.train.MomentumOptimizer(
-		params["learning_rate"], params["momentum"]
-	)
+	# Set up a momentum optizimer with exponentially decaying learning rate
+	lr = tf.train.exponential_decay(params["learning_rate"],
+					tf.train.get_global_step(),
+					params["decay_steps"],
+					params["decay_rate"],
+					name="learning_rate")
+	optimizer = tf.train.MomentumOptimizer(lr, params["momentum"])
 	train_op = optimizer.minimize(
 		loss=loss, global_step=tf.train.get_global_step())
 
@@ -113,8 +119,8 @@ def model_fn(features, labels, mode, params):
 
 
 def  LeCunCharacterCNN(size="small", num_tokens=54, num_classes=7,
-			learning_rate=1e-3, momentum=0.9, dropout_prob=0.5,
-			model_dir=None):
+			learning_rate=1e-3, decay_steps=10000, decay_rate=0.2,
+			momentum=0.9, dropout_prob=0.5, model_dir=None):
 	"""
 	Macro to build the CNN as a TensorFlow Estimator.
 
@@ -130,6 +136,7 @@ def  LeCunCharacterCNN(size="small", num_tokens=54, num_classes=7,
 	"""
 	params = {"size":size, "num_tokens":num_tokens, 
 		"num_classes":num_classes, "learning_rate":learning_rate,
+		"decay_steps":decay_steps, "decay_rate":decay_rate,
 		"momentum":momentum, "dropout_prob":dropout_prob}
 	return tf.estimator.Estimator(model_fn, params=params,
 					model_dir=model_dir)
