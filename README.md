@@ -1,11 +1,6 @@
-<<<<<<< HEAD
-tl;dr
-
-
-=======
 # tldr
 
-Convenience functions for getting text data into TensorFlow.
+Working with  text data in TensorFlow.
 
 
 ## Goals
@@ -25,4 +20,3 @@ Convenience functions for getting text data into TensorFlow.
  3. `encode:` Tools for reformatting the list of integers into the shape needed for the `estimator` API- differences will be in **the type of model** (i.e. whether it inputs a bag-of-words vector, a sequence, etc). Functions should output a TF input function and list of feature columns (the latter is needed for specifying a `tf.estimator` model; the former is needed for training/evaluation)
 
 
->>>>>>> 53742e8242625172fbd41b2fd6993b69739896b8
