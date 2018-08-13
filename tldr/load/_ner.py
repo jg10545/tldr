@@ -68,8 +68,10 @@ def parse_doc(d, num_tokens=50, token_length=15):
     toks, labs = _pad_doc(toks, labs, num_tokens)
     # get padded tokens for character-level representation
     chars = [_pad_token(t, token_length) for t in toks]
-    # turn everything into an array
-    toks = np.array([t.lower() for t in toks])
+    # turn everything into an array. the expand_dims makes sure
+    # that embedding tools in tf.feature_columns won't smoosh
+    # them all together.
+    toks = np.expand_dims(np.array([t.lower() for t in toks]), -1)
     chars = np.expand_dims(np.array([list(c) for c in chars]), -1)
     labs = np.array(labs)
     return {"tokens":toks, "chars":chars}, labs
@@ -95,7 +97,7 @@ def conll_input_fn(docs, num_tokens=50, token_length=15, repeat=1,
     ds = tf.data.Dataset.from_generator(_gen, 
                                         ({"tokens":tf.string, 
                                           "chars":tf.string}, tf.int64),
-                                       ({"tokens":tf.TensorShape([num_tokens]),
+                                       ({"tokens":tf.TensorShape([num_tokens,1]),
                                         "chars":tf.TensorShape([num_tokens, 
                                                                 token_length,1])},
                                        tf.TensorShape(num_tokens)))
