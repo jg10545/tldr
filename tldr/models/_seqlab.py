@@ -98,7 +98,8 @@ def _bidirectional_rnn(inpt, state_size=200, dropout_prob=0.5, training=False, n
         fw_cell = tf.nn.rnn_cell.LSTMCell(state_size)
         bw_cell = tf.nn.rnn_cell.LSTMCell(state_size)
         # combine into a bidirectional RNN
-        rnn_output, rnn_state = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, rnn_inputs, 
+        rnn_output, rnn_state = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, 
+                                                            inpt, 
                                                             dtype=tf.float32)
         dropout = tf.layers.dropout(tf.concat(rnn_output, 2), dropout_prob, training=training)
         logits = tf.layers.dense(dropout, num_labels, name="logits")
@@ -114,11 +115,12 @@ def model_fn(features, labels, mode, params):
     training = mode == tf.estimator.ModeKeys.TRAIN
     
     # assemble the embeddings
-    tok_embed_tensor, char_embed_tensor = _prepare_input_tensors(
+    char_embed_tensor, tok_embed_tensor = _prepare_input_tensors(
                                             features, params["char_list"], 
                                             params["token_list"], 
                                             params["char_embed_dim"],
                                             params["token_embed_dim"])
+
     # build the character CNN
     cnn_output = _character_cnn(char_embed_tensor, params["window_size"], params["num_filters"], 
                                 params["dropout_prob"], training)
@@ -136,8 +138,8 @@ def model_fn(features, labels, mode, params):
             mode=mode,
             predictions={"class":predictions}
         )
-    
-    loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(labels_oh, predictions))
+
+    loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(labels_oh, rnn_output))
     eval_metric_ops = {
         "accuracy":tf.metrics.accuracy(labels, predictions)
     }
@@ -161,7 +163,7 @@ def model_fn(features, labels, mode, params):
 def SequenceClassifier(model_dir, token_list, char_list, num_labels=10,
                        char_embed_dim=30, token_embed_dim=100,
                        window_size=3, num_filters=30, dropout_prob=0.5, 
-                       state_size=200, learning_rate=1e-3,
+                       state_size=200, learning_rate=1e-3, momentum=0.9,
                        warm_start_from=None):
     """
     STUFF
@@ -170,7 +172,8 @@ def SequenceClassifier(model_dir, token_list, char_list, num_labels=10,
               "num_labels":num_labels, "char_embed_dim":char_embed_dim,
               "token_embed_dim":token_embed_dim, "window_size":window_size,
               "num_filters":num_filters, "dropout_prob":dropout_prob,
-              "state_size":state_size, "learning_rate":learning_rate}
+              "state_size":state_size, "learning_rate":learning_rate,
+              "momentum":momentum}
     return tf.estimator.Estimator(model_fn, model_dir=model_dir, 
                                   params=params, 
                                   warm_start_from=warm_start_from)
