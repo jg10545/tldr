@@ -153,8 +153,12 @@ def model_fn(features, labels, mode, params):
             eval_metric_ops=eval_metric_ops
         )
     
-    optimizer = tf.train.MomentumOptimizer(params["learning_rate"], params["momentum"])
-    train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+    gstep = tf.train.get_global_step()
+    lr = tf.train.exponential_decay(params["learning_rate"], gstep,
+                                    params["decay_step"],
+                                    params["decay_rate"])
+    optimizer = tf.train.MomentumOptimizer(lr, params["momentum"])
+    train_op = optimizer.minimize(loss, global_step=gstep)
     
     return tf.estimator.EstimatorSpec(
         mode=mode,
@@ -168,6 +172,7 @@ def SequenceClassifier(model_dir, token_list, char_list, num_labels=10,
                        char_embed_dim=30, token_embed_dim=100,
                        window_size=3, num_filters=30, dropout_prob=0.5, 
                        state_size=200, learning_rate=1e-3, momentum=0.9,
+                       decay_step=1000, decay_rate=0.5,
                        warm_start_from=None):
     """
     STUFF
@@ -177,7 +182,8 @@ def SequenceClassifier(model_dir, token_list, char_list, num_labels=10,
               "token_embed_dim":token_embed_dim, "window_size":window_size,
               "num_filters":num_filters, "dropout_prob":dropout_prob,
               "state_size":state_size, "learning_rate":learning_rate,
-              "momentum":momentum}
+              "momentum":momentum, "decay_step":decay_step,
+              "decay_rate":decay_rate}
     return tf.estimator.Estimator(model_fn, model_dir=model_dir, 
                                   params=params, 
                                   warm_start_from=warm_start_from)
