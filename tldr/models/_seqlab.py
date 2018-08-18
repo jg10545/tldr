@@ -8,6 +8,7 @@ paper "End-to-end Sequence Labeling via Bi-directional LSTM-CN-CRFs".
 
 """
 import tensorflow as tf
+import tensorflow.contrib
 
 def _prepare_input_tensors(x, char_list, token_list, char_embed_dim=30, 
                            token_embed_dim=100):
@@ -139,7 +140,10 @@ def model_fn(features, labels, mode, params):
             predictions={"class":predictions}
         )
 
-    loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(labels_oh, rnn_output))
+
+    loglik, T = tf.contrib.crf.crf_log_likelihood(rnn_output, labels, features["num_tokens"])
+    loss = -1*tf.reduce_sum(loglik)
+    #loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(labels_oh, rnn_output))
     eval_metric_ops = {
         "accuracy":tf.metrics.accuracy(labels, predictions)
     }

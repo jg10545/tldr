@@ -74,7 +74,7 @@ def parse_doc(d, num_tokens=50, token_length=15):
     toks = np.expand_dims(np.array([t.lower() for t in toks]), -1)
     chars = np.expand_dims(np.array([list(c) for c in chars]), -1)
     labs = np.array(labs)
-    return {"tokens":toks, "chars":chars}, labs
+    return {"tokens":toks, "chars":chars, "num_tokens":num_tokens}, labs
 
 
 
@@ -96,17 +96,24 @@ def conll_input_fn(docs, num_tokens=50, token_length=15, repeat=1,
             yield parse_doc(d, num_tokens, token_length)
     ds = tf.data.Dataset.from_generator(_gen, 
                                         ({"tokens":tf.string, 
-                                          "chars":tf.string}, tf.int64),
+                                          "chars":tf.string,
+                                         "num_tokens":tf.int64}, tf.int64),
                                        ({"tokens":tf.TensorShape([num_tokens,1]),
                                         "chars":tf.TensorShape([num_tokens, 
-                                                                token_length,1])},
+                                                                token_length,1]),
+                                        "num_tokens":tf.TensorShape([])},
                                        tf.TensorShape(num_tokens)))
     ds = ds.repeat(repeat)
     if shuffle:
         ds = ds.shuffle(1000)
     ds = ds.batch(batch_size)
     ds = ds.prefetch(5)
-    return ds.make_one_shot_iterator().get_next()
+    
+    def _input_fn():
+        return ds.make_one_shot_iterator().get_next()
+    return _input_fn
+
+#    return ds.make_one_shot_iterator().get_next()
 
 
 
