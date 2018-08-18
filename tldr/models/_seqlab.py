@@ -140,9 +140,11 @@ def model_fn(features, labels, mode, params):
             predictions={"class":predictions}
         )
 
-
+    # LOSS FUNCTION
     loglik, T = tf.contrib.crf.crf_log_likelihood(rnn_output, labels, features["num_tokens"])
     loss = -1*tf.reduce_sum(loglik)
+    tf.summary.image("CRF_transitions",
+                     tf.expand_dims(tf.expand_dims(T,-1),0))
     #loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(labels_oh, rnn_output))
     eval_metric_ops = {
         "accuracy":tf.metrics.accuracy(labels, predictions)
@@ -157,6 +159,7 @@ def model_fn(features, labels, mode, params):
     lr = tf.train.exponential_decay(params["learning_rate"], gstep,
                                     params["decay_step"],
                                     params["decay_rate"])
+    tf.summary.scalar("learning_rate", lr)
     optimizer = tf.train.MomentumOptimizer(lr, params["momentum"])
     train_op = optimizer.minimize(loss, global_step=gstep)
     
