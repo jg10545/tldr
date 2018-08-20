@@ -118,8 +118,8 @@ def sequence_accuracy(pred, lab, name="accuracy"):
         # which records have at least one token predicted incorrectly?
         mistakes = tf.reduce_any(tf.not_equal(pred, lab), axis=1)
         # what's the batch accuracy across records?
-        return tf.reduce_mean(tf.cast(mistakes, tf.float32), name=name)
-
+        #return tf.reduce_mean(tf.cast(mistakes, tf.float32), name=name)
+        return tf.metrics.mean(tf.cast(mistakes, tf.float32), name=name)
 
 def model_fn(features, labels, mode, params):
     """
@@ -166,11 +166,12 @@ def model_fn(features, labels, mode, params):
     accuracy = sequence_accuracy(decode_tags, tf.cast(labels, tf.int32))
     
     eval_metric_ops = {
-        "accuracy":(accuracy, accuracy)
+        "accuracy":accuracy
     }
     if mode == tf.estimator.ModeKeys.EVAL:
         return tf.estimator.EstimatorSpec(
             mode=mode,
+            loss=loss,
             eval_metric_ops=eval_metric_ops
         )
     
