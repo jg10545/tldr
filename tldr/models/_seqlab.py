@@ -10,8 +10,8 @@ paper "End-to-end Sequence Labeling via Bi-directional LSTM-CN-CRFs".
 import tensorflow as tf
 import tensorflow.contrib
 
-def _prepare_input_tensors(x, char_list, token_list, char_embed_dim=30, 
-                           token_embed_dim=100):
+def _prepare_input_tensors(x, token_list, token_embed, char_list, 
+                           char_embed_dim=30):
     """
     TO DO come up with a slick way to include pretrained glove or word2vec 
     vectors.
@@ -34,6 +34,7 @@ def _prepare_input_tensors(x, char_list, token_list, char_embed_dim=30,
     dims = x["chars"].get_shape().as_list()
     num_tokens = dims[1]
     token_length = dims[2]
+    token_embed_dim = token_embed.shape[1]
                            
     # CHARACTER LEVEL EMBEDDING
     with tf.name_scope("char_embedding"):
@@ -47,12 +48,14 @@ def _prepare_input_tensors(x, char_list, token_list, char_embed_dim=30,
     
     # WORD LEVEL EMBEDDING
     with tf.name_scope("token_embedding"):
+        print(token_list)
         tok_col = tf.feature_column.categorical_column_with_vocabulary_list(
                             "tokens", token_list)
         # THIS NEEDS TO CHANGE: trainable to False and 
         # include initializer=tf.constant_initializer()
         tok_embed_col = tf.feature_column.embedding_column(
-                            tok_col, token_embed_dim, trainable=True)
+                            tok_col, token_embed_dim, trainable=False,
+                            initializer=tf.constant_initializer(token_embed))
         tok_embed_tensor = tf.reshape(tf.feature_column.input_layer(
                             x, [tok_embed_col]),
                             [-1, num_tokens, token_embed_dim])
@@ -129,10 +132,10 @@ def model_fn(features, labels, mode, params):
     
     # assemble the embeddings
     char_embed_tensor, tok_embed_tensor = _prepare_input_tensors(
-                                            features, params["char_list"], 
-                                            params["token_list"], 
-                                            params["char_embed_dim"],
-                                            params["token_embed_dim"])
+                                            features, params["token_list"], 
+                                            params["token_embeds"], 
+                                            params["char_list"],
+                                            params["char_embed_dim"])
 
     # build the character CNN
     cnn_output = _character_cnn(char_embed_tensor, params["window_size"], params["num_filters"], 
@@ -191,8 +194,9 @@ def model_fn(features, labels, mode, params):
     )
     
 
-def SequenceClassifier(model_dir, token_list, char_list, num_labels=10,
-                       char_embed_dim=30, token_embed_dim=100,
+def SequenceClassifier(model_dir, token_list, token_embeds, char_list, 
+                       num_labels=10,
+                       char_embed_dim=30,
                        window_size=3, num_filters=30, dropout_prob=0.5, 
                        state_size=200, learning_rate=1e-3, momentum=0.9,
                        decay_step=1000, decay_rate=0.5,
@@ -202,7 +206,7 @@ def SequenceClassifier(model_dir, token_list, char_list, num_labels=10,
     """
     params = {"token_list":token_list, "char_list":char_list, 
               "num_labels":num_labels, "char_embed_dim":char_embed_dim,
-              "token_embed_dim":token_embed_dim, "window_size":window_size,
+              "token_embeds":token_embeds, "window_size":window_size,
               "num_filters":num_filters, "dropout_prob":dropout_prob,
               "state_size":state_size, "learning_rate":learning_rate,
               "momentum":momentum, "decay_step":decay_step,
