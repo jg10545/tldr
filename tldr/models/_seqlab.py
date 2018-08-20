@@ -108,11 +108,23 @@ def _bidirectional_rnn(inpt, state_size=200, dropout_prob=0.5, training=False, n
 
 
 
+def sequence_accuracy(pred, lab, name="accuracy"):
+    """
+    Let's compute the per-record accuracy
+    
+    :pred: let's assume [batch_size, num_tokens]
+    """
+    with tf.name_scope("sequence_accuracy"):
+        # which records have at least one token predicted incorrectly?
+        mistakes = tf.reduce_any(tf.not_equal(pred, lab), axis=1)
+        # what's the batch accuracy across records?
+        return tf.reduce_mean(tf.cast(mistakes, tf.float32), name=name)
+
 
 def model_fn(features, labels, mode, params):
     """
     """
-    labels_oh = tf.one_hot(labels, params["num_labels"])
+    #labels_oh = tf.one_hot(labels, params["num_labels"])
     training = mode == tf.estimator.ModeKeys.TRAIN
     
     # assemble the embeddings
@@ -131,23 +143,30 @@ def model_fn(features, labels, mode, params):
     rnn_output = _bidirectional_rnn(rnn_inputs, params["state_size"], 
                                     params["dropout_prob"], 
                                     training, params["num_labels"])
-    
-    predictions = tf.argmax(rnn_output, axis=2, name="predictions")
+    # LOSS FUNCTION
+    loglik, T = tf.contrib.crf.crf_log_likelihood(rnn_output, labels, 
+                                                  features["num_tokens"])
+    loss = -1*tf.reduce_sum(loglik)
+    # decode tags is [batch_size, max_seq_len]; best_score is [batch_size]
+    decode_tags, best_score = tf.contrib.crf.crf_decode(rnn_output, T, 
+                                                        features["num_tokens"])
     
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(
             mode=mode,
-            predictions={"class":predictions}
+            predictions={"decode_tags":decode_tags,
+                         "score":best_score}
         )
 
-    # LOSS FUNCTION
-    loglik, T = tf.contrib.crf.crf_log_likelihood(rnn_output, labels, features["num_tokens"])
-    loss = -1*tf.reduce_sum(loglik)
     tf.summary.image("CRF_transitions",
                      tf.expand_dims(tf.expand_dims(T,-1),0))
     #loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(labels_oh, rnn_output))
+    # let's compute the overall per-sentence accuracy- for each record
+    # in the batch, is EVERY prediction identical to the label?
+    accuracy = sequence_accuracy(decode_tags, tf.cast(labels, tf.int32))
+    
     eval_metric_ops = {
-        "accuracy":tf.metrics.accuracy(labels, predictions)
+        "accuracy":(accuracy, accuracy)
     }
     if mode == tf.estimator.ModeKeys.EVAL:
         return tf.estimator.EstimatorSpec(
