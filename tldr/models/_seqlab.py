@@ -48,7 +48,6 @@ def _prepare_input_tensors(x, token_list, token_embed, char_list,
     
     # WORD LEVEL EMBEDDING
     with tf.name_scope("token_embedding"):
-        print(token_list)
         tok_col = tf.feature_column.categorical_column_with_vocabulary_list(
                             "tokens", token_list)
         # THIS NEEDS TO CHANGE: trainable to False and 
@@ -163,7 +162,6 @@ def model_fn(features, labels, mode, params):
 
     tf.summary.image("CRF_transitions",
                      tf.expand_dims(tf.expand_dims(T,-1),0))
-    #loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(labels_oh, rnn_output))
     # let's compute the overall per-sentence accuracy- for each record
     # in the batch, is EVERY prediction identical to the label?
     accuracy = sequence_accuracy(decode_tags, tf.cast(labels, tf.int32))

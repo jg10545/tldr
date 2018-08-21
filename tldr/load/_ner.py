@@ -10,7 +10,7 @@ LSTM-CNN-CRF by Ma and Hovy (2016).
 """
 import numpy as np
 import tensorflow as tf
-
+import tensorflow.contrib
 
 # my choice of integer label for each CONLL2003
 labelmap = {"O":0, "B-PER":1, "I-PER":2, "B-ORG":3, "I-ORG":4, 
@@ -73,13 +73,13 @@ def parse_doc(d, num_tokens=50, token_length=15):
     # them all together.
     toks = np.expand_dims(np.array([t.lower() for t in toks]), -1)
     chars = np.expand_dims(np.array([list(c) for c in chars]), -1)
-    labs = np.array(labs)
+    labs = np.array(labs, dtype=np.int32)
     return {"tokens":toks, "chars":chars, "num_tokens":num_tokens}, labs
 
 
 
 def conll_input_fn(docs, num_tokens=50, token_length=15, repeat=1, 
-                   shuffle=False, batch_size=10):
+                   shuffle=False, batch_size=10, prefetch=5):
     """
     Train/test input function generator for named entity recognition.
     
@@ -97,7 +97,7 @@ def conll_input_fn(docs, num_tokens=50, token_length=15, repeat=1,
     ds = tf.data.Dataset.from_generator(_gen, 
                                         ({"tokens":tf.string, 
                                           "chars":tf.string,
-                                         "num_tokens":tf.int64}, tf.int64),
+                                         "num_tokens":tf.int32}, tf.int32),
                                        ({"tokens":tf.TensorShape([num_tokens,1]),
                                         "chars":tf.TensorShape([num_tokens, 
                                                                 token_length,1]),
@@ -107,8 +107,8 @@ def conll_input_fn(docs, num_tokens=50, token_length=15, repeat=1,
     if shuffle:
         ds = ds.shuffle(1000)
     ds = ds.batch(batch_size)
-    ds = ds.prefetch(5)
-    
+    ds = ds.prefetch(prefetch)
+
     def _input_fn():
         return ds.make_one_shot_iterator().get_next()
     return _input_fn
