@@ -182,7 +182,14 @@ def model_fn(features, labels, mode, params):
                                     params["decay_rate"])
     tf.summary.scalar("learning_rate", lr)
     optimizer = tf.train.MomentumOptimizer(lr, params["momentum"])
-    train_op = optimizer.minimize(loss, global_step=gstep)
+    # compute gradients
+    gradients = optimizer.compute_gradients(loss)
+    # clip gradients
+    clipped = [(tf.clip_by_value(g, -5, 5), var) for g, var in gradients]
+    train_op = optimizer.apply_gradients(clipped, global_step=gstep)
+    #train_op = optimizer.minimize(loss, global_step=gstep)
+    
+    
     
     return tf.estimator.EstimatorSpec(
         mode=mode,
