@@ -197,7 +197,7 @@ def SequenceClassifier(model_dir, token_list, token_embeds, char_list,
                        char_embed_dim=30,
                        window_size=3, num_filters=30, dropout_prob=0.5, 
                        state_size=200, learning_rate=1e-3, momentum=0.9,
-                       decay_step=1000, decay_rate=0.5,
+                       decay_step=10000, decay_rate=0.5,
                        warm_start_from=None):
     """
     STUFF
