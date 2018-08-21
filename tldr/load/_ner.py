@@ -7,10 +7,13 @@ Code for preparing input functions for NER data.
 Based on model in "End-to-end Sequence Labeling via Bi-directional
 LSTM-CNN-CRF by Ma and Hovy (2016).
 
+Got the data from https://github.com/Franck-Dernoncourt/NeuroNER/tree/master/data/conll2003/en
+
 """
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib
+import string
 
 # my choice of integer label for each CONLL2003
 labelmap = {"O":0, "B-PER":1, "I-PER":2, "B-ORG":3, "I-ORG":4, 
@@ -114,8 +117,40 @@ def conll_input_fn(docs, num_tokens=50, token_length=15, repeat=1,
     return _input_fn
 
 #    return ds.make_one_shot_iterator().get_next()
+    
+
+def _sentparse(sent):
+    s = sent
+    for c in string.punctuation:
+        s = s.replace(c, " "+c+" ")
+    return np.array([t for t in s.split() if len(t)>0])
 
 
-
+def token_predict_input_fn(sent, token_length=15):
+    """
+    
+    """
+    parsed = _sentparse(sent)
+    tokens= np.expand_dims(np.array([t.lower() for t in parsed]),-1)
+    num_tokens = len(tokens)
+    
+    chars = [_pad_token(t, token_length) for t in parsed]
+    chars = np.expand_dims(np.array([list(c) for c in chars]), -1)
+    
+    def _gen():
+        yield {"tokens":tokens, "chars":chars, "num_tokens":num_tokens}
+        
+    ds = tf.data.Dataset.from_generator(_gen, 
+                                        {"tokens":tf.string, 
+                                          "chars":tf.string,
+                                         "num_tokens":tf.int32},
+                                       {"tokens":tf.TensorShape([num_tokens,1]),
+                                        "chars":tf.TensorShape([num_tokens, 
+                                                                token_length,1]),
+                                        "num_tokens":tf.TensorShape([])})
+    ds = ds.batch(1)
+    def _input_fn():
+        return ds.make_one_shot_iterator().get_next()
+    return _input_fn
 
 
