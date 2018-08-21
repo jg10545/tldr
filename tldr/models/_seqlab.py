@@ -121,7 +121,7 @@ def sequence_accuracy(pred, lab, name="accuracy"):
         mistakes = tf.reduce_any(tf.not_equal(pred, lab), axis=1)
         # what's the batch accuracy across records?
         #return tf.reduce_mean(tf.cast(mistakes, tf.float32), name=name)
-        return tf.metrics.mean(tf.cast(mistakes, tf.float32), name=name)
+        return tf.metrics.mean(1-tf.cast(mistakes, tf.float32), name=name)
 
 def model_fn(features, labels, mode, params):
     """
