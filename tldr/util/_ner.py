@@ -6,7 +6,7 @@ colmap = {1:"green", 2:"green", 3:"blue", 4:"blue", 5:"yellow", 6:"yellow",
           7:"fuchsia", 8:"fuchsia"}
 
 def _build_colorstring(sent, tags):
-    tokens = tldr.load._ner._sentparse(sent)
+    tokens = _sentparse(sent)
     outstr = ""
     for i in range(len(tokens)):
         if tags[i] in colmap:
