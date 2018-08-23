@@ -138,7 +138,8 @@ def token_predict_input_fn(sent, token_length=15):
     chars = np.expand_dims(np.array([list(c) for c in chars]), -1)
     
     def _gen():
-        yield {"tokens":tokens, "chars":chars, "num_tokens":num_tokens}
+        yield {"tokens":tokens, "chars":chars, 
+               "num_tokens":num_tokens}
         
     ds = tf.data.Dataset.from_generator(_gen, 
                                         {"tokens":tf.string, 

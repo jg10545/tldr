@@ -145,9 +145,17 @@ def model_fn(features, labels, mode, params):
     rnn_output = _bidirectional_rnn(rnn_inputs, params["state_size"], 
                                     params["dropout_prob"], 
                                     training, params["num_labels"])
-    # LOSS FUNCTION
+
+    # THIS IS An AWFUL HACK. DON'T JUDGE ME.
+    # Basically tf.contrib.crf.crf_log_likelihood freaks out
+    # if you don't pass "labels" to it, but in evaluate mode
+    # "labels" is None.
+    if labels is None:
+        labels = tf.argmax(rnn_output, -1)
+        
     loglik, T = tf.contrib.crf.crf_log_likelihood(rnn_output, labels, 
                                                   features["num_tokens"])
+
     loss = -1*tf.reduce_sum(loglik)
     # decode tags is [batch_size, max_seq_len]; best_score is [batch_size]
     decode_tags, best_score = tf.contrib.crf.crf_decode(rnn_output, T, 
